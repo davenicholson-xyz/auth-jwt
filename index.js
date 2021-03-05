@@ -122,27 +122,33 @@ var authjwt = function (app, User, options) {
         }
     });
     router.post("/register", function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-        var _a, user, token, err_2;
+        var user, _a, token, err_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    _b.trys.push([0, 3, , 4]);
-                    _a = req.body;
-                    return [4 /*yield*/, encryptPassword(req.body.password)];
+                    req.body.password = req.body.password || "";
+                    _b.label = 1;
                 case 1:
-                    _a.password = _b.sent();
+                    _b.trys.push([1, 5, , 6]);
                     return [4 /*yield*/, User.create(req.body)];
                 case 2:
                     user = _b.sent();
+                    _a = user;
+                    return [4 /*yield*/, encryptPassword(req.body.password)];
+                case 3:
+                    _a.password = _b.sent();
+                    return [4 /*yield*/, user.save()];
+                case 4:
+                    _b.sent();
                     token = createJWT(user._id, req.auth.secret);
                     res.cookie("access_token", token, { httpOnly: true, maxAge: req.auth.maxAge * 1000 });
                     res.json({ token: token });
-                    return [3 /*break*/, 4];
-                case 3:
+                    return [3 /*break*/, 6];
+                case 5:
                     err_2 = _b.sent();
-                    next(err_2);
-                    return [3 /*break*/, 4];
-                case 4: return [2 /*return*/];
+                    next(authError(err_2));
+                    return [3 /*break*/, 6];
+                case 6: return [2 /*return*/];
             }
         });
     }); });
@@ -174,7 +180,6 @@ var authjwt = function (app, User, options) {
                 case 4: return [3 /*break*/, 6];
                 case 5:
                     err_3 = _a.sent();
-                    console.log(err_3);
                     next(err_3);
                     return [3 /*break*/, 6];
                 case 6: return [2 /*return*/];
@@ -235,3 +240,17 @@ var checkPassword = function (clearpassword, password) { return __awaiter(void 0
         }
     });
 }); };
+var authError = function (error) {
+    var _a, _b;
+    if (error.code) {
+        if (error.code === 11000) {
+            var field = Object.keys(error.keyValue)[0];
+            return field + " has already been registered";
+        }
+    }
+    if (error.errors) {
+        var validation = (_b = (_a = Object.values(error.errors)[0]) === null || _a === void 0 ? void 0 : _a.properties) === null || _b === void 0 ? void 0 : _b.message;
+        return validation !== null && validation !== void 0 ? validation : "Somethign went wrong: " + error.toString();
+    }
+    return error.message;
+};

@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from "express";
-import { Document, Error, Model } from "mongoose";
+import { Document, Model } from "mongoose";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
 import { genSalt, hash, compare } from "bcrypt";
@@ -86,14 +86,16 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
   });
 
   router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
+    req.body.password = req.body.password || "";
     try {
-      req.body.password = await encryptPassword(req.body.password);
       const user = await User.create(req.body);
+      user.password = await encryptPassword(req.body.password);
+      await user.save();
       const token = createJWT(user._id, req.auth.secret!);
       res.cookie("access_token", token, { httpOnly: true, maxAge: req.auth.maxAge! * 1000 });
       res.json({ token });
     } catch (err) {
-      next(err);
+      next(authError(err));
     }
   });
 
@@ -113,7 +115,6 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
         next("incorrect email/password");
       }
     } catch (err) {
-      console.log(err);
       next(err);
     }
   });
@@ -166,4 +167,26 @@ const createJWT = (userid: string, secret: string) => {
 const checkPassword = async (clearpassword: string, password: string) => {
   const checked = await compare(clearpassword, password);
   return checked;
+};
+
+interface AuthError extends Error {
+  code?: number;
+  keyValue: {};
+  errors?: [any];
+}
+
+const authError = (error: AuthError) => {
+  if (error.code) {
+    if (error.code === 11000) {
+      let field = Object.keys(error.keyValue)[0];
+      return `${field} has already been registered`;
+    }
+  }
+
+  if (error.errors) {
+    let validation = Object.values(error.errors)[0]?.properties?.message;
+    return validation ?? `Somethign went wrong: ${error.toString()}`;
+  }
+
+  return error.message;
 };
