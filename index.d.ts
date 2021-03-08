@@ -9,7 +9,7 @@ interface AuthOptions {
     secret?: string;
     redirect?: string;
     token?: string;
-    staticAuth?: [string];
+    static?: any;
 }
 declare global {
     namespace Express {

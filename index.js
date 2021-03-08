@@ -75,13 +75,14 @@ var authjwt = function (app, User, options) {
         }
         next();
     });
-    if (options.staticAuth) {
+    if (options.static) {
+        var root_1 = options.static.root || "./public";
         var _loop_1 = function (route) {
             app.get("/" + route, exports.requireAuth, function (req, res, next) {
-                res.sendFile(route + ".html", { root: "./public" });
+                res.sendFile(route + ".html", { root: root_1 });
             });
         };
-        for (var _i = 0, _a = options.staticAuth; _i < _a.length; _i++) {
+        for (var _i = 0, _a = options.static.pages; _i < _a.length; _i++) {
             var route = _a[_i];
             _loop_1(route);
         }

@@ -19,7 +19,7 @@ interface AuthOptions {
   secret?: string;
   redirect?: string;
   token?: string;
-  staticAuth?: [string];
+  static?: any;
 }
 
 declare global {
@@ -54,10 +54,11 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
     next();
   });
 
-  if (options.staticAuth) {
-    for (let route of options.staticAuth) {
+  if (options.static) {
+    let root = options.static.root || "./public";
+    for (let route of options.static.pages) {
       app.get(`/${route}`, requireAuth, (req: Request, res: Response, next: NextFunction) => {
-        res.sendFile(`${route}.html`, { root: "./public" });
+        res.sendFile(`${route}.html`, { root });
       });
     }
   }
