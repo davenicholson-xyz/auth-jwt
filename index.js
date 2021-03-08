@@ -68,6 +68,7 @@ var authjwt = function (app, User, options) {
             secret: options.secret || "jwt_secret_key",
             redirect: options.redirect || "/",
             maxAge: options.maxAge || 3600000,
+            userFields: options.userFields || [],
         };
         var token = req.cookies.access_token;
         if (token) {
@@ -102,10 +103,10 @@ var authjwt = function (app, User, options) {
                         case 1:
                             _b.trys.push([1, 3, , 4]);
                             _a = req;
-                            return [4 /*yield*/, User.findById(decoded.id).lean()];
+                            return [4 /*yield*/, User.findById(decoded.id)];
                         case 2:
                             _a.user = _b.sent();
-                            delete req.user.password;
+                            req.user.set("password", undefined, { strict: false });
                             next();
                             return [3 /*break*/, 4];
                         case 3:
@@ -193,9 +194,18 @@ var authjwt = function (app, User, options) {
     });
     router.get("/user", function (req, res, next) {
         if (req.user) {
-            {
-                res.json({ user: req.user });
+            var user = {};
+            if (req.auth.userFields.length > 0) {
+                user["id"] = req.user._id;
+                for (var _i = 0, _a = req.auth.userFields; _i < _a.length; _i++) {
+                    var field = _a[_i];
+                    user[field] = req.user.get(field);
+                }
             }
+            else {
+                user = req.user;
+            }
+            res.json({ user: user });
         }
         else {
             res.json({ user: false });

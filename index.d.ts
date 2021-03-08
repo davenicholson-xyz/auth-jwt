@@ -10,6 +10,7 @@ interface AuthOptions {
     redirect?: string;
     token?: string;
     static?: any;
+    userFields?: [string] | [];
 }
 declare global {
     namespace Express {

@@ -20,6 +20,7 @@ interface AuthOptions {
   redirect?: string;
   token?: string;
   static?: any;
+  userFields?: [string] | [];
 }
 
 declare global {
@@ -46,6 +47,7 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
       secret: options.secret || "jwt_secret_key",
       redirect: options.redirect || "/",
       maxAge: options.maxAge || 3600000,
+      userFields: options.userFields || [],
     };
     const token = req.cookies.access_token;
     if (token) {
@@ -72,8 +74,8 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
           next();
         } else {
           try {
-            req.user = await User.findById(decoded.id).lean();
-            delete req.user!.password;
+            req.user = await User.findById(decoded.id);
+            req.user!.set("password", undefined, { strict: false });
             next();
           } catch (err) {
             next("jwt auth error");
@@ -127,9 +129,16 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
 
   router.get("/user", (req: Request, res: Response, next: NextFunction) => {
     if (req.user) {
-      {
-        res.json({ user: req.user });
+      let user: any = {};
+      if (req.auth.userFields!.length > 0) {
+        user["id"] = req.user._id;
+        for (let field of req.auth.userFields!) {
+          user[field] = req.user.get(field);
+        }
+      } else {
+        user = req.user;
       }
+      res.json({ user });
     } else {
       res.json({ user: false });
     }
