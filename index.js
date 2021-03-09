@@ -97,6 +97,7 @@ var authjwt = function (app, User, options) {
                         case 0:
                             if (!err) return [3 /*break*/, 1];
                             req.user = null;
+                            app.locals.user = null;
                             res.cookie("access_token", null, { httpOnly: true, maxAge: 0 });
                             next();
                             return [3 /*break*/, 4];
@@ -107,6 +108,7 @@ var authjwt = function (app, User, options) {
                         case 2:
                             _a.user = _b.sent();
                             req.user.set("password", undefined, { strict: false });
+                            app.locals.user = req.user;
                             next();
                             return [3 /*break*/, 4];
                         case 3:
@@ -120,6 +122,7 @@ var authjwt = function (app, User, options) {
         }
         else {
             req.user = null;
+            app.locals.user = null;
             next();
         }
     });
