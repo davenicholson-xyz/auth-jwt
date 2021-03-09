@@ -70,12 +70,14 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
       jwt.verify(req.auth.token, req.auth.secret!, async (err, decoded: any) => {
         if (err) {
           req.user = null;
+          app.locals.user = null;
           res.cookie("access_token", null, { httpOnly: true, maxAge: 0 });
           next();
         } else {
           try {
             req.user = await User.findById(decoded.id);
             req.user!.set("password", undefined, { strict: false });
+            app.locals.user = req.user;
             next();
           } catch (err) {
             next("jwt auth error");
@@ -84,6 +86,7 @@ export const authjwt = (app: Express, User: Model<IUser>, options: AuthOptions =
       });
     } else {
       req.user = null;
+      app.locals.user = null;
       next();
     }
   });
